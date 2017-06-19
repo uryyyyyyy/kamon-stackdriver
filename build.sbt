@@ -2,7 +2,11 @@ val kamonCore = "io.kamon" %% "kamon-core" % "0.6.7"
 val monitoring = "com.google.apis" % "google-api-services-monitoring" % "v3-rev406-1.22.0"
 
 lazy val root = (project in file("."))
-  .settings(name := "kamon-stackdriver")
+  .settings(
+    name := "kamon-stackdriver",
+    organization := "com.github.uryyyyyyy",
+    version := "0.0.1"
+  )
   .settings(
     scalaVersion := "2.11.11",
     publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath+"/Desktop/my-repository"))),

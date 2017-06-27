@@ -7,12 +7,12 @@ lazy val root = (project in file("."))
     version := "0.0.2"
   )
   .settings(
-    licenses := Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php")),
-    homepage := Some(url("http://example.com")),
+    licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
+    homepage := Some(url("https://github.com/uryyyyyyy/kamon-stackdriver")),
     scmInfo := Some(
       ScmInfo(
-        url("https://github.com/your-account/your-project"),
-        "scm:git@github.com:your-account/your-project.git"
+        url("https://github.com/uryyyyyyy/kamon-stackdriver"),
+        "scm:git@github.com:uryyyyyyy/kamon-stackdriver.git"
       )
     ),
     developers := List(
@@ -20,7 +20,7 @@ lazy val root = (project in file("."))
         id = "uryyyyyyy",
         name = "Koki Shibata",
         email = "koki305@gmail.com",
-        url = url("http://your.url")
+        url = url("https://github.com/uryyyyyyy")
       )
     ),
     publishMavenStyle := true,

@@ -1,26 +1,23 @@
 package com.github.uryyyyyyy.kamon.stackdriver
 
 import java.io.IOException
-
-import akka.actor.Actor
-import kamon.metric.SubscriptionsDispatcher.TickMetricSnapshot
-import akka.actor.ActorLogging
-import kamon.metric.Entity
-import kamon.metric.SingleInstrumentEntityRecorder
-import kamon.metric.MetricKey
-import kamon.metric.instrument.Histogram
-import kamon.metric.instrument.Counter
 import java.lang.management.ManagementFactory
+import java.time.format.DateTimeFormatter
+import java.time.{ZoneOffset, ZonedDateTime}
+import java.util
 
+import akka.actor.{Actor, ActorLogging}
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.services.monitoring.v3.model._
 import com.google.api.services.monitoring.v3.{Monitoring, MonitoringScopes}
 import com.google.common.collect.{ImmutableMap, Lists}
-import java.time.format.DateTimeFormatter
-import java.time.{ZoneOffset, ZonedDateTime}
-import java.util
+import kamon.metric.SubscriptionsDispatcher.TickMetricSnapshot
+import kamon.metric.instrument.{Counter, Histogram}
+import kamon.metric.{Entity, MetricKey, SingleInstrumentEntityRecorder}
+
+import scala.collection.JavaConverters._
 
 /**
  * Sends metrics to Stackdriver through its client API.
@@ -29,6 +26,28 @@ class StackdriverAPIMetricsSender extends Actor with ActorLogging {
 
   private val config = context.system.settings.config.getConfig("kamon.stackdriver")
   private val appName = config.getString("application-name")
+  private val projectID = config.getString("project-id")
+  private val projectResource = "projects/" + projectID
+  private val monitoredResourceType = config.getString("monitored-resource-type")
+
+  private val metricLabel: util.Map[String, String] = {
+    val builder = ImmutableMap.builder[String, String]()
+    val obj = config.getConfig("metric-label")
+    config.getObject("metric-label").keySet().asScala.foreach(key => {
+      builder.put(key, obj.getString(key))
+    })
+    builder.build()
+  }
+
+  private val resourceLabel: util.Map[String, String] = {
+    val builder = ImmutableMap.builder[String, String]()
+    val obj = config.getConfig("resource-label")
+    config.getObject("resource-label").keySet().asScala.foreach(key => {
+      builder.put(key, obj.getString(key))
+    })
+    builder.build()
+  }
+
   private val monitoringService = authenticate()
 
   override def receive = {
@@ -36,13 +55,7 @@ class StackdriverAPIMetricsSender extends Actor with ActorLogging {
       send(tick)
   }
 
-  private def createTimeSeries(metricType: String, metricKind: String, value: Double): TimeSeries = {
-    val rfc3339 = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'")
-    val now = ZonedDateTime.now(ZoneOffset.UTC)
-
-    val metricLabel: util.Map[String, String] = ImmutableMap.of("environment", "STAGING")
-    val resourceLabel: util.Map[String, String] = ImmutableMap.of("instance_id", "test-instance", "zone", "us-central1-f")
-
+  private def createTimeSeries(metricType: String, metricKind: String, value: Double, nowStr: String): TimeSeries = {
 
     val timeSeries: TimeSeries = new TimeSeries
     val metric: Metric = new Metric
@@ -50,13 +63,12 @@ class StackdriverAPIMetricsSender extends Actor with ActorLogging {
     metric.setLabels(metricLabel)
     timeSeries.setMetric(metric)
     val monitoredResource: MonitoredResource = new MonitoredResource
-    monitoredResource.setType("gce_instance")
+    monitoredResource.setType(monitoredResourceType)
     monitoredResource.setLabels(resourceLabel)
     timeSeries.setResource(monitoredResource)
     timeSeries.setMetricKind(metricKind)
     val point: Point = new Point
     val ti: TimeInterval = new TimeInterval
-    val nowStr = rfc3339.format(now)
     ti.setStartTime(nowStr)
     ti.setEndTime(nowStr)
     point.setInterval(ti)
@@ -65,44 +77,41 @@ class StackdriverAPIMetricsSender extends Actor with ActorLogging {
     timeSeries
   }
 
-  private def createRequest(timeSeriesList: Seq[TimeSeries]): CreateTimeSeriesRequest = {
+  private def createRequest(timeSeriesList: Iterable[TimeSeries]): CreateTimeSeriesRequest = {
     val timeSeriesRequest: CreateTimeSeriesRequest = new CreateTimeSeriesRequest
-    timeSeriesRequest.setTimeSeries(Lists.newArrayList[TimeSeries](timeSeriesList :_*))
+    timeSeriesRequest.setTimeSeries(Lists.newArrayList[TimeSeries](timeSeriesList.toSeq :_*))
     timeSeriesRequest
   }
 
   def send(tick: TickMetricSnapshot): Unit = {
-    val timeSeriesList: Seq[TimeSeries] = (for {
+    val timeSeriesListList: Iterator[Iterable[TimeSeries]] = (for {
       (groupIdentity, groupSnapshot) ← tick.metrics
       (metricIdentity, metricSnapshot) ← groupSnapshot.metrics
     } yield {
       val key = buildMetricName(groupIdentity, metricIdentity)
-
-      def emit(keyPostfix: String, metricKind: String, value: Double): TimeSeries = {
-        createTimeSeries(key + keyPostfix, metricKind, value)
-      }
+      val rfc3339 = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'")
+      val now = ZonedDateTime.now(ZoneOffset.UTC)
+      val nowStr = rfc3339.format(now)
 
       metricSnapshot match {
         case hs: Histogram.Snapshot ⇒
           Seq(
-            emit(".min", "GAUGE", hs.min),
-            emit(".max", "GAUGE", hs.max),
-            emit(".cnt", "GAUGE", hs.numberOfMeasurements),
-            emit(".sum", "GAUGE", hs.sum),
-            emit(".p95", "GAUGE", hs.percentile(0.95))
+            createTimeSeries(key + ".min", "GAUGE", hs.min, nowStr),
+            createTimeSeries(key + ".max", "GAUGE", hs.max, nowStr),
+            createTimeSeries(key + ".cnt", "GAUGE", hs.numberOfMeasurements, nowStr),
+            createTimeSeries(key + ".sum", "GAUGE", hs.sum, nowStr),
+            createTimeSeries(key + ".p95", "GAUGE", hs.percentile(0.95), nowStr)
           )
         case cs: Counter.Snapshot ⇒
-          if (cs.count > 0) Seq(emit("", "GAUGE", cs.count)) else Seq()
+          if (cs.count > 0) Seq(createTimeSeries(key, "GAUGE", cs.count, nowStr)) else Seq()
       }
-    }).flatten.toSeq.slice(200, 250)
-
-    val project = "adplan-reach-simulator-stg"
-    val projectResource = "projects/" + project
-
-    val timeSeriesRequest = createRequest(timeSeriesList)
+    }).flatten.grouped(100)
 
     try {
-      monitoringService.projects.timeSeries.create(projectResource, timeSeriesRequest).execute
+      timeSeriesListList.foreach(timeSeriesList => {
+        val timeSeriesRequest = createRequest(timeSeriesList)
+        monitoringService.projects.timeSeries.create(projectResource, timeSeriesRequest).execute
+      })
     } catch {
       case e: IOException => log.error("stackdriver request failed, some metrics may have been dropped: {}", e.getMessage)
     }

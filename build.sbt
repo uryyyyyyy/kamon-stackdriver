@@ -4,7 +4,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "kamon-stackdriver",
     organization := "com.github.uryyyyyyy",
-    version := "0.0.2"
+    version := "0.1.0"
   )
   .settings(
     licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
@@ -36,4 +36,5 @@ lazy val root = (project in file("."))
       "io.kamon" %% "kamon-core" % "0.6.7",
       "com.google.apis" % "google-api-services-monitoring" % "v3-rev406-1.22.0"
     )
+    // publishTo := Some(Resolver.file("file",  new File( "/Users/ko.shibata/develop/uryyyyyyy/git/" )) )
   )

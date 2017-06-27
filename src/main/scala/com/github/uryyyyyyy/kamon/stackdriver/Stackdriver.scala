@@ -26,7 +26,6 @@ class StackdriverExtension(system: ExtendedActorSystem) extends Kamon.Extension 
 
   private val stackdriverConfig = system.settings.config.getConfig("kamon.stackdriver")
 
-  val stackdriverHost = new InetSocketAddress(stackdriverConfig.getString("hostname"), stackdriverConfig.getInt("port"))
   private val flushInterval = stackdriverConfig.getFiniteDuration("flush-interval")
   private val tickInterval = Kamon.metrics.settings.tickInterval
 

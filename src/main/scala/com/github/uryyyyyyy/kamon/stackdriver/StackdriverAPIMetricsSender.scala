@@ -1,6 +1,5 @@
 package com.github.uryyyyyyy.kamon.stackdriver
 
-import java.io.IOException
 import java.lang.management.ManagementFactory
 import java.time.format.DateTimeFormatter
 import java.time.{ZoneOffset, ZonedDateTime}
@@ -29,10 +28,10 @@ class StackdriverAPIMetricsSender extends Actor with ActorLogging {
   private val config = context.system.settings.config.getConfig("kamon.stackdriver")
   private val appName = config.getString("application-name")
   private val projectID = config.getString("project-id")
-  logger.info(s"StackdriverAPIMetricsSender: project-id -> ${projectID}")
+  logger.info(s"project-id -> ${projectID}")
   private val projectResource = "projects/" + projectID
   private val monitoredResourceType = config.getString("monitored-resource-type")
-  logger.info(s"StackdriverAPIMetricsSender: monitored-resource-type -> ${monitoredResourceType}")
+  logger.info(s"monitored-resource-type -> ${monitoredResourceType}")
 
   private val metricLabel: util.Map[String, String] = {
     val builder = ImmutableMap.builder[String, String]()
@@ -42,7 +41,7 @@ class StackdriverAPIMetricsSender extends Actor with ActorLogging {
     })
     builder.build()
   }
-  logger.info(s"StackdriverAPIMetricsSender: metric-label -> ${metricLabel.asScala.map(v => s"(${v._1}, ${v._2})").mkString(",")}")
+  logger.info(s"metric-label -> ${metricLabel.asScala.map(v => s"(${v._1}, ${v._2})").mkString(",")}")
 
   private val resourceLabel: util.Map[String, String] = {
     val builder = ImmutableMap.builder[String, String]()
@@ -52,7 +51,7 @@ class StackdriverAPIMetricsSender extends Actor with ActorLogging {
     })
     builder.build()
   }
-  logger.info(s"StackdriverAPIMetricsSender: resource-label -> ${resourceLabel.asScala.map(v => s"(${v._1}, ${v._2})").mkString(",")}")
+  logger.info(s"resource-label -> ${resourceLabel.asScala.map(v => s"(${v._1}, ${v._2})").mkString(",")}")
 
   private val monitoringService = authenticate()
 
@@ -84,8 +83,17 @@ class StackdriverAPIMetricsSender extends Actor with ActorLogging {
   }
 
   private def createRequest(timeSeriesList: Iterable[TimeSeries]): CreateTimeSeriesRequest = {
+    val list: util.List[TimeSeries] = new util.ArrayList[TimeSeries]()
+    val uniqueCheckMetricsTypeSet: util.Set[String] = new util.HashSet[String]()
+    timeSeriesList.foreach(series => {
+      if (!uniqueCheckMetricsTypeSet.contains(series.getMetric.getType)){
+        uniqueCheckMetricsTypeSet.add(series.getMetric.getType)
+        list.add(series)
+      }
+    })
+
     val timeSeriesRequest: CreateTimeSeriesRequest = new CreateTimeSeriesRequest
-    timeSeriesRequest.setTimeSeries(Lists.newArrayList[TimeSeries](timeSeriesList.toSeq :_*))
+    timeSeriesRequest.setTimeSeries(list)
     timeSeriesRequest
   }
 
@@ -119,7 +127,7 @@ class StackdriverAPIMetricsSender extends Actor with ActorLogging {
         monitoringService.projects.timeSeries.create(projectResource, timeSeriesRequest).execute
       })
     } catch {
-      case e: IOException => logger.error("stackdriver request failed, some metrics may have been dropped: {}", e.getMessage)
+      case e: Exception => logger.error("stackdriver request failed, some metrics may have been dropped: {}", e.getMessage)
     }
   }
 
@@ -138,6 +146,7 @@ class StackdriverAPIMetricsSender extends Actor with ActorLogging {
     val credential = GoogleCredential.getApplicationDefault.createScoped(MonitoringScopes.all)
     val httpTransport = new NetHttpTransport
     val jsonFactory = new JacksonFactory
+    logger.info(s"service account id -> ${credential.getServiceAccountId}")
     new Monitoring.Builder(httpTransport, jsonFactory, credential).setApplicationName("Monitoring Sample").build
   }
 }

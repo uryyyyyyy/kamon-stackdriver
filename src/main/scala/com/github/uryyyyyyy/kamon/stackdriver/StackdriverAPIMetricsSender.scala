@@ -16,6 +16,7 @@ import com.google.common.collect.{ImmutableMap, Lists}
 import kamon.metric.SubscriptionsDispatcher.TickMetricSnapshot
 import kamon.metric.instrument.{Counter, Histogram}
 import kamon.metric.{Entity, MetricKey, SingleInstrumentEntityRecorder}
+import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
 
@@ -24,11 +25,14 @@ import scala.collection.JavaConverters._
  */
 class StackdriverAPIMetricsSender extends Actor with ActorLogging {
 
+  private val logger = LoggerFactory.getLogger(classOf[StackdriverAPIMetricsSender])
   private val config = context.system.settings.config.getConfig("kamon.stackdriver")
   private val appName = config.getString("application-name")
   private val projectID = config.getString("project-id")
+  logger.info(s"StackdriverAPIMetricsSender: project-id -> ${projectID}")
   private val projectResource = "projects/" + projectID
   private val monitoredResourceType = config.getString("monitored-resource-type")
+  logger.info(s"StackdriverAPIMetricsSender: monitored-resource-type -> ${monitoredResourceType}")
 
   private val metricLabel: util.Map[String, String] = {
     val builder = ImmutableMap.builder[String, String]()
@@ -38,6 +42,7 @@ class StackdriverAPIMetricsSender extends Actor with ActorLogging {
     })
     builder.build()
   }
+  logger.info(s"StackdriverAPIMetricsSender: metric-label -> ${metricLabel.asScala.map(v => s"(${v._1}, ${v._2})").mkString(",")}")
 
   private val resourceLabel: util.Map[String, String] = {
     val builder = ImmutableMap.builder[String, String]()
@@ -47,6 +52,7 @@ class StackdriverAPIMetricsSender extends Actor with ActorLogging {
     })
     builder.build()
   }
+  logger.info(s"StackdriverAPIMetricsSender: resource-label -> ${resourceLabel.asScala.map(v => s"(${v._1}, ${v._2})").mkString(",")}")
 
   private val monitoringService = authenticate()
 
@@ -113,7 +119,7 @@ class StackdriverAPIMetricsSender extends Actor with ActorLogging {
         monitoringService.projects.timeSeries.create(projectResource, timeSeriesRequest).execute
       })
     } catch {
-      case e: IOException => log.error("stackdriver request failed, some metrics may have been dropped: {}", e.getMessage)
+      case e: IOException => logger.error("stackdriver request failed, some metrics may have been dropped: {}", e.getMessage)
     }
   }
 

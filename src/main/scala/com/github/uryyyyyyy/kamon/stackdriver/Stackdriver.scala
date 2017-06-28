@@ -1,18 +1,15 @@
 
 package com.github.uryyyyyyy.kamon.stackdriver
 
-import java.net.InetSocketAddress
-
 import akka.actor._
-import akka.event.Logging
 import kamon.Kamon
-import kamon.util.ConfigTools.Syntax
 import kamon.metric._
+import kamon.util.ConfigTools.Syntax
+import kamon.util.NeedToScale
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
-
-import kamon.util.NeedToScale
 
 object Stackdriver extends ExtensionId[StackdriverExtension] with ExtensionIdProvider {
   override def lookup(): ExtensionId[_ <: Extension] = Stackdriver
@@ -21,7 +18,7 @@ object Stackdriver extends ExtensionId[StackdriverExtension] with ExtensionIdPro
 
 class StackdriverExtension(system: ExtendedActorSystem) extends Kamon.Extension {
   implicit private val as = system
-  val log = Logging(system, classOf[StackdriverExtension])
+  private val log = LoggerFactory.getLogger(classOf[StackdriverExtension])
   log.info("Starting the Kamon(Stackdriver) extension")
 
   private val stackdriverConfig = system.settings.config.getConfig("kamon.stackdriver")

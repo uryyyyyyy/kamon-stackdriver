@@ -1,6 +1,5 @@
 package com.github.uryyyyyyy.kamon.stackdriver
 
-import java.io.IOException
 import java.lang.management.ManagementFactory
 import java.time.format.DateTimeFormatter
 import java.time.{ZoneOffset, ZonedDateTime}
@@ -119,7 +118,7 @@ class StackdriverAPIMetricsSender extends Actor with ActorLogging {
         monitoringService.projects.timeSeries.create(projectResource, timeSeriesRequest).execute
       })
     } catch {
-      case e: IOException => logger.error("stackdriver request failed, some metrics may have been dropped: {}", e.getMessage)
+      case e: Exception => logger.error("stackdriver request failed, some metrics may have been dropped: {}", e.getMessage)
     }
   }
 

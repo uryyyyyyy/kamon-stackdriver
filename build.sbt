@@ -4,9 +4,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "kamon-stackdriver",
     organization := "com.github.uryyyyyyy",
-    version := "0.1.0"
-  )
-  .settings(
+    version := "0.1.1",
     licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
     homepage := Some(url("https://github.com/uryyyyyyy/kamon-stackdriver")),
     scmInfo := Some(
@@ -25,6 +23,7 @@ lazy val root = (project in file("."))
     ),
     publishMavenStyle := true,
     scalaVersion := "2.11.11",
+    crossScalaVersions := Seq("2.11.11", "2.12.2"),
     publishTo := {
       val nexus = "https://oss.sonatype.org/"
       if (isSnapshot.value)

@@ -2,7 +2,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "kamon-stackdriver",
     organization := "com.github.uryyyyyyy",
-    version := "0.2.0-SNAPSHOT",
+    version := "0.2.0",
     licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
     homepage := Some(url("https://github.com/uryyyyyyy/kamon-stackdriver")),
     scmInfo := Some(

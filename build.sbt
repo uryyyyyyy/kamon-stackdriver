@@ -1,10 +1,8 @@
-val akkaActor = "com.typesafe.akka" %% s"akka-actor" % "2.3.15"
-
 lazy val root = (project in file("."))
   .settings(
     name := "kamon-stackdriver",
     organization := "com.github.uryyyyyyy",
-    version := "0.1.3",
+    version := "0.2.0-SNAPSHOT",
     licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
     homepage := Some(url("https://github.com/uryyyyyyy/kamon-stackdriver")),
     scmInfo := Some(
@@ -23,7 +21,7 @@ lazy val root = (project in file("."))
     ),
     publishMavenStyle := true,
     scalaVersion := "2.11.11",
-    crossScalaVersions := Seq("2.11.11", "2.12.2"),
+    crossScalaVersions := Seq("2.11.11", "2.12.4"),
     publishTo := {
       val nexus = "https://oss.sonatype.org/"
       if (isSnapshot.value)
@@ -32,8 +30,8 @@ lazy val root = (project in file("."))
         Some("releases"  at nexus + "service/local/staging/deploy/maven2")
     },
     libraryDependencies ++= Seq(
-      "io.kamon" %% "kamon-core" % "0.6.7",
-      "com.google.apis" % "google-api-services-monitoring" % "v3-rev406-1.22.0"
+      "io.kamon" %% "kamon-core" % "1.1.0",
+      "com.google.cloud" % "google-cloud-monitoring" % "0.39.0-beta"
     )
-    // publishTo := Some(Resolver.file("file",  new File( "/Users/ko.shibata/develop/uryyyyyyy/git/" )) )
+    //publishTo := Some(Resolver.file("file",  new File(s"${System.getProperty("user.home")}/Desktop/")) )
   )

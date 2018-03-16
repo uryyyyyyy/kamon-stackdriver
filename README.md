@@ -9,3 +9,8 @@ google stackdriver Integration
 - [kamon](http://kamon.io/documentation/get-started/)
 - [Google Stackdriver](https://cloud.google.com/stackdriver/)
 
+## publish
+
+```
+./scripts/publish.sh
+```

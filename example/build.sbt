@@ -3,7 +3,7 @@ lazy val root = (project in file("."))
     name := "kamon-stackdriver-sample",
     scalaVersion := "2.11.11",
     libraryDependencies ++= Seq(
-      "com.github.uryyyyyyy" %% "kamon-stackdriver" % "0.2.0-SNAPSHOT",
+      "com.github.uryyyyyyy" %% "kamon-stackdriver" % "0.2.1-SNAPSHOT",
       "io.kamon" %% "kamon-system-metrics" % "1.0.0",
       "ch.qos.logback" % "logback-classic" % "1.2.3"
     )

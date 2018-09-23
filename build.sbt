@@ -2,7 +2,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "kamon-stackdriver",
     organization := "com.github.uryyyyyyy",
-    version := "0.2.1-SNAPSHOT",
+    version := "0.3.0",
     licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
     homepage := Some(url("https://github.com/uryyyyyyy/kamon-stackdriver")),
     scmInfo := Some(
@@ -20,8 +20,8 @@ lazy val root = (project in file("."))
       )
     ),
     publishMavenStyle := true,
-    scalaVersion := "2.11.11",
-    crossScalaVersions := Seq("2.11.11", "2.12.4"),
+    scalaVersion := "2.11.12",
+    crossScalaVersions := Seq("2.11.12", "2.12.6"),
     publishTo := {
       val nexus = "https://oss.sonatype.org/"
       if (isSnapshot.value)
@@ -30,8 +30,8 @@ lazy val root = (project in file("."))
         Some("releases"  at nexus + "service/local/staging/deploy/maven2")
     },
     libraryDependencies ++= Seq(
-      "io.kamon" %% "kamon-core" % "1.1.0",
-      "com.google.cloud" % "google-cloud-monitoring" % "0.39.0-beta"
+      "io.kamon" %% "kamon-core" % "1.1.3",
+      "com.google.cloud" % "google-cloud-monitoring" % "1.45.0"
     )
     //publishTo := Some(Resolver.file("file",  new File(s"${System.getProperty("user.home")}/Desktop/")) )
   )

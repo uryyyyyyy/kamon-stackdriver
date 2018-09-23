@@ -14,8 +14,8 @@ addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.1.1")
 
 credentials += Credentials("Sonatype Nexus Repository Manager",
                            "oss.sonatype.org",
-                           "XXXXX",
-                           "XXXXX")
+                           "<sonatype user id>",
+                           "<sonatype password>")
 ```
 
 # publish

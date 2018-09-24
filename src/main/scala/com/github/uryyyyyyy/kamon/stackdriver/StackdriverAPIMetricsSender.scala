@@ -109,7 +109,6 @@ class StackdriverAPIMetricsSender extends MetricReporter {
       } catch {
         case e: Exception => {
           logger.warn("stackdriver request failed, some metrics may have been dropped. {}", e.getMessage)
-          _timeSeriesList.foreach(v => logger.warn(s"stackdriver fail: metricType: ${v.getMetric.getType}, label: ${v.getMetric.getLabelsMap}"))
         }
       }
     })
@@ -119,7 +118,7 @@ class StackdriverAPIMetricsSender extends MetricReporter {
 
     val metric = Metric.newBuilder()
       .setType(s"custom.googleapis.com/${metricType}")
-      .putAllLabels(tags.map{case (k, v) => (k.replace('.', '_'), v)}.asJava)
+      .putAllLabels(tags.map{case (k, v) => (k.replace('.', '_').replace('-', '_'), v)}.asJava)
       .build()
 
     val monitoredResource = MonitoredResource.newBuilder()

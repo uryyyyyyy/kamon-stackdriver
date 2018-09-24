@@ -99,24 +99,27 @@ class StackdriverAPIMetricsSender extends MetricReporter {
     // API cannot accept when timeSeries over 250
     val timeSeriesListList = (counterTimeSeries ++ gaugeTimeSeries ++ histgramTimeSeries ++ rangeSamplerTimeSeries).grouped(200)
 
-    try {
-      timeSeriesListList.foreach(_timeSeriesList => {
-        val createTimeSeriesRequest = CreateTimeSeriesRequest.newBuilder()
-          .addAllTimeSeries(_timeSeriesList.toList.asJava)
-          .setName(s"projects/${projectID}")
-          .build()
+    timeSeriesListList.foreach(_timeSeriesList => {
+      val createTimeSeriesRequest = CreateTimeSeriesRequest.newBuilder()
+        .addAllTimeSeries(_timeSeriesList.toList.asJava)
+        .setName(s"projects/${projectID}")
+        .build()
+      try {
         metricServiceClient.createTimeSeries(createTimeSeriesRequest)
-      })
-    } catch {
-      case e: Exception => logger.warn("stackdriver request failed, some metrics may have been dropped: {}", e.getMessage)
-    }
+      } catch {
+        case e: Exception => {
+          logger.warn("stackdriver request failed, some metrics may have been dropped. {}", e.getMessage)
+          _timeSeriesList.foreach(v => logger.warn(s"stackdriver fail: metricType: ${v.getMetric.getType}, label: ${v.getMetric.getLabelsMap}"))
+        }
+      }
+    })
   }
 
   private def createTimeSeries(metricType: String, metricKind: MetricKind, tags: Tags, value: Double, now: Timestamp): TimeSeries = {
 
     val metric = Metric.newBuilder()
       .setType(s"custom.googleapis.com/${metricType}")
-      .putAllLabels(tags.asJava)
+      .putAllLabels(tags.map{case (k, v) => (k.replace('.', '_'), v)}.asJava)
       .build()
 
     val monitoredResource = MonitoredResource.newBuilder()
